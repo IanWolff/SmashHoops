@@ -1,2 +1,2 @@
-# smashhoops
+# SmashHoops
 🏀
