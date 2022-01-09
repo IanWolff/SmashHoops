@@ -4,10 +4,10 @@ using Platformer.Mechanics;
 namespace Platformer.Gameplay
 {
     /// <summary>
-    /// Fired when the player performs a Ground Jump.
+    /// Fired when the player performs a Full Jump.
     /// </summary>
-    /// <typeparam name="PlayerJumpedGround"></typeparam>
-    public class PlayerJumpedGround : Simulation.Event<PlayerJumpedGround>
+    /// <typeparam name="PlayerFullJumped"></typeparam>
+    public class PlayerFullJumped : Simulation.Event<PlayerFullJumped>
     {
         public PlayerController player;
 

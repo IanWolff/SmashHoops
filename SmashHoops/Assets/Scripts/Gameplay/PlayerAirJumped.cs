@@ -6,8 +6,8 @@ namespace Platformer.Gameplay
     /// <summary>
     /// Fired when the player performs an Air Jump.
     /// </summary>
-    /// <typeparam name="PlayerJumpedAir"></typeparam>
-    public class PlayerJumpedAir : Simulation.Event<PlayerJumpedAir>
+    /// <typeparam name="PlayerAirJumped"></typeparam>
+    public class PlayerAirJumped : Simulation.Event<PlayerAirJumped>
     {
         public PlayerController player;
 
