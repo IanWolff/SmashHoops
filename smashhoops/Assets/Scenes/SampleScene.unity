@@ -288,8 +288,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: 0.25595936, y: 0}
-  endPosition: {x: -0.98063207, y: 0}
 --- !u!4 &130987215
 Transform:
   m_ObjectHideFlags: 0
@@ -416,8 +414,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.2063255, y: 0}
-  endPosition: {x: 1.3086131, y: 0}
 --- !u!1 &292457041
 GameObject:
   m_ObjectHideFlags: 0
@@ -1023,8 +1019,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.5024251, y: 0}
-  endPosition: {x: 1.2943823, y: 0}
 --- !u!1 &419576585
 GameObject:
   m_ObjectHideFlags: 0
@@ -5454,8 +5448,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -2.1479552, y: 0}
-  endPosition: {x: 2.086929, y: 0}
 --- !u!1 &671227344
 GameObject:
   m_ObjectHideFlags: 0
@@ -5857,6 +5849,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114230831923080080, guid: 7d60c822c3f1b408ea7a00ecdb5e047a,
+        type: 3}
+      propertyPath: jumpAudio
+      value: 
+      objectReference: {fileID: 8300000, guid: 29e768a84e09ad84ea8db83ed82dec54, type: 3}
+    - target: {fileID: 114230831923080080, guid: 7d60c822c3f1b408ea7a00ecdb5e047a,
+        type: 3}
+      propertyPath: jumpAirAudio
+      value: 
+      objectReference: {fileID: 8300000, guid: 072632a4a8a1c9b4fa64914117693f4c, type: 3}
+    - target: {fileID: 114230831923080080, guid: 7d60c822c3f1b408ea7a00ecdb5e047a,
+        type: 3}
+      propertyPath: jumpGroundAudio
+      value: 
+      objectReference: {fileID: 8300000, guid: 29e768a84e09ad84ea8db83ed82dec54, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7d60c822c3f1b408ea7a00ecdb5e047a, type: 3}
 --- !u!114 &838423048 stripped
@@ -6318,8 +6325,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.7852057, y: 0}
-  endPosition: {x: 1.9981619, y: 0}
 --- !u!4 &1379753724
 Transform:
   m_ObjectHideFlags: 0
@@ -6377,8 +6382,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.9617181, y: 0}
-  endPosition: {x: 2.2367508, y: 0}
 --- !u!1 &1586129519
 GameObject:
   m_ObjectHideFlags: 0
@@ -6422,8 +6425,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.5895245, y: 0}
-  endPosition: {x: 3.1613905, y: 0}
 --- !u!1 &1620406956
 GameObject:
   m_ObjectHideFlags: 0
@@ -6453,8 +6454,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.3955923, y: 0}
-  endPosition: {x: 4.0990367, y: 0}
 --- !u!4 &1620406958
 Transform:
   m_ObjectHideFlags: 0
@@ -6681,8 +6680,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.5895207, y: 0}
-  endPosition: {x: 0.7892328, y: 0}
 --- !u!4 &1771592756
 Transform:
   m_ObjectHideFlags: 0
@@ -7010,8 +7007,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -1.5895207, y: 0}
-  endPosition: {x: 1.9469285, y: 0}
 --- !u!4 &1830976162
 Transform:
   m_ObjectHideFlags: 0
@@ -7112,7 +7107,10 @@ MonoBehaviour:
     NearClipPlane: 0.1
     FarClipPlane: 5000
     Dutch: 0
+    ModeOverride: 0
     LensShift: {x: 0, y: 0}
+    GateFit: 2
+    m_SensorSize: {x: 1.8754864, y: 1}
   m_Transitions:
     m_BlendHint: 0
     m_InheritPosition: 0
@@ -7182,8 +7180,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 83b023ebe508a49c880fc00552f0dfc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startPosition: {x: -3.267413, y: 0}
-  endPosition: {x: 0.74157184, y: 0}
 --- !u!4 &1981112391
 Transform:
   m_ObjectHideFlags: 0

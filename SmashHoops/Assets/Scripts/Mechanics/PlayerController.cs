@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Platformer.Gameplay;
@@ -14,7 +14,8 @@ namespace Platformer.Mechanics
     /// </summary>
     public class PlayerController : KinematicObject
     {
-        public AudioClip jumpAudio;
+        public AudioClip jumpGroundAudio;
+        public AudioClip jumpAirAudio;
         public AudioClip respawnAudio;
         public AudioClip ouchAudio;
 
@@ -23,15 +24,19 @@ namespace Platformer.Mechanics
         /// </summary>
         public float maxSpeed = 7;
         /// <summary>
-        /// Initial jump velocity at the start of a jump.
+        /// Initial jump velocity at the start of a grounded jump.
         /// </summary>
-        public float jumpTakeOffSpeed = 7;
+        public float groundTakeOffSpeed = 7;
+        /// <summary>
+        /// Initial jump velocity at the start of an air jump.
+        /// </summary>
+        public float airTakeOffSpeed = 6;
 
         public JumpState jumpState = JumpState.Grounded;
         private bool stopJump;
         /*internal new*/ public Collider2D collider2d;
         /*internal new*/ public AudioSource audioSource;
-        public Health health;
+        public Percent percent;
         public bool controlEnabled = true;
 
         bool jump;
@@ -44,7 +49,7 @@ namespace Platformer.Mechanics
 
         void Awake()
         {
-            health = GetComponent<Health>();
+            percent = GetComponent<Percent>();
             audioSource = GetComponent<AudioSource>();
             collider2d = GetComponent<Collider2D>();
             spriteRenderer = GetComponent<SpriteRenderer>();
@@ -57,12 +62,15 @@ namespace Platformer.Mechanics
             {
                 move.x = Input.GetAxis("Horizontal");
                 if (jumpState == JumpState.Grounded && Input.GetButtonDown("Jump"))
-                    jumpState = JumpState.PrepareToJump;
-                else if (Input.GetButtonUp("Jump"))
+                    jumpState = JumpState.JumpedGround;
+                else if (jumpState == JumpState.Flight && Input.GetButtonDown("Jump"))
+                    jumpState = JumpState.JumpedAir;
+                /*else if (Input.GetButtonUp("Jump"))
                 {
                     stopJump = true;
                     Schedule<PlayerStopJump>().player = this;
                 }
+                */
             }
             else
             {
@@ -77,19 +85,26 @@ namespace Platformer.Mechanics
             jump = false;
             switch (jumpState)
             {
-                case JumpState.PrepareToJump:
-                    jumpState = JumpState.Jumping;
+                case JumpState.JumpedGround:
                     jump = true;
                     stopJump = false;
+                    Schedule<PlayerJumpedGround>().player = this;
+                    jumpState = JumpState.Flight;
                     break;
-                case JumpState.Jumping:
-                    if (!IsGrounded)
+                case JumpState.JumpedAir:
+                    jump = true;
+                    stopJump = false;
+                    Schedule<PlayerJumpedAir>().player = this;
+                    jumpState = JumpState.Fall;
+                    break;
+                case JumpState.Flight:
+                    if (IsGrounded)
                     {
-                        Schedule<PlayerJumped>().player = this;
-                        jumpState = JumpState.InFlight;
+                        Schedule<PlayerLanded>().player = this;
+                        jumpState = JumpState.Landed;
                     }
                     break;
-                case JumpState.InFlight:
+                case JumpState.Fall:
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -106,8 +121,13 @@ namespace Platformer.Mechanics
         {
             if (jump && IsGrounded)
             {
-                velocity.y = jumpTakeOffSpeed * model.jumpModifier;
-                jump = false;
+                velocity.y = groundTakeOffSpeed * model.jumpModifier;
+                jump = true;
+            }
+            else if (jump && jumpState == JumpState.Flight)
+            {
+                velocity.y = airTakeOffSpeed * model.jumpModifier;
+                jump = true;
             }
             else if (stopJump)
             {
@@ -132,9 +152,10 @@ namespace Platformer.Mechanics
         public enum JumpState
         {
             Grounded,
-            PrepareToJump,
-            Jumping,
-            InFlight,
+            JumpedGround,
+            JumpedAir,
+            Flight,
+            Fall,
             Landed
         }
     }

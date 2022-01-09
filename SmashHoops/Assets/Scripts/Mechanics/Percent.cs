@@ -6,55 +6,44 @@ using static Platformer.Core.Simulation;
 namespace Platformer.Mechanics
 {
     /// <summary>
-    /// Represebts the current vital statistics of some game entity.
+    /// Represents the current vital statistics of some game entity.
     /// </summary>
-    public class Health : MonoBehaviour
+    public class Percent : MonoBehaviour
     {
         /// <summary>
         /// The maximum hit points for the entity.
         /// </summary>
-        public int maxHP = 1;
+        public int maxPT = 999;
 
-        /// <summary>
-        /// Indicates if the entity should be considered 'alive'.
-        /// </summary>
-        public bool IsAlive => currentHP > 0;
-
-        int currentHP;
+        int currentPT;
 
         /// <summary>
         /// Increment the HP of the entity.
         /// </summary>
-        public void Increment()
+        public void Increment(int damage)
         {
-            currentHP = Mathf.Clamp(currentHP + 1, 0, maxHP);
+            currentPT = Mathf.Clamp(currentPT + damage, 0, maxPT);
         }
 
         /// <summary>
-        /// Decrement the HP of the entity. Will trigger a HealthIsZero event when
-        /// current HP reaches 0.
+        /// Decrement the HP of the entity.
         /// </summary>
-        public void Decrement()
+        public void Decrement(int heal)
         {
-            currentHP = Mathf.Clamp(currentHP - 1, 0, maxHP);
-            if (currentHP == 0)
-            {
-                var ev = Schedule<HealthIsZero>();
-                ev.health = this;
-            }
+            currentPT = Mathf.Clamp(currentPT - heal, 0, maxPT);
         }
 
         /// <summary>
-        /// Decrement the HP of the entitiy until HP reaches 0.
+        /// Reset the HP of the entity.
         /// </summary>
-        public void Die()
+        public void Reset()
         {
-            while (currentHP > 0) Decrement();
+            currentPT = 0;
         }
 
         void Awake()
         {
-            currentHP = maxHP;
+            currentPT = 0;
         }
     }
 }
