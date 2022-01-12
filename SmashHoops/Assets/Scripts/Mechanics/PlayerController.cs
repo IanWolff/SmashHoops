@@ -22,19 +22,19 @@ namespace Platformer.Mechanics
         /// <summary>
         /// Max horizontal speed of the player.
         /// </summary>
-        public float maxSpeed = 3;
+        public float maxSpeed = 6;
         /// <summary>
         /// Initial jump velocity at the start of a short jump.
         /// </summary>
-        public float shortJumpSpeed = 2;
+        public float shortJumpSpeed = 6;
         /// <summary>        
         /// Initial jump velocity at the start of a full jump.
         /// </summary>
-        public float fullJumpSpeed = 4;
+        public float fullJumpSpeed = 12;
         /// <summary>
         /// Initial jump velocity at the start of an air jump.
         /// </summary>
-        public float airJumpSpeed = 4;
+        public float airJumpSpeed = 14;
 
         public JumpState jumpState = JumpState.Grounded;
         /*internal new*/ public Collider2D collider2d;

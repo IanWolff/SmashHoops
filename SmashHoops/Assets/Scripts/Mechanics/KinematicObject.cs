@@ -17,7 +17,7 @@ namespace Platformer.Mechanics
         /// <summary>
         /// A custom gravity coefficient applied to this entity.
         /// </summary>
-        public float gravityModifier = 1f;
+        public float gravityModifier = 4f;
 
         /// <summary>
         /// The current velocity of the entity.
@@ -101,11 +101,7 @@ namespace Platformer.Mechanics
 
         protected virtual void FixedUpdate()
         {
-            //if already falling, fall faster than the jump speed, otherwise use normal gravity.
-            if (velocity.y < 0)
-                velocity += gravityModifier * Physics2D.gravity * Time.deltaTime;
-            else
-                velocity += Physics2D.gravity * Time.deltaTime;
+            velocity += gravityModifier * Physics2D.gravity * Time.deltaTime;
 
             velocity.x = targetVelocity.x;
 
