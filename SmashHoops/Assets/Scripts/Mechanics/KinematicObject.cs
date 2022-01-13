@@ -111,32 +111,70 @@ namespace Platformer.Mechanics
 
             var moveAlongGround = new Vector2(groundNormal.y, -groundNormal.x);
 
-            var move = moveAlongGround * deltaPosition.x;
-
-            PerformMovement(move, false);
-
-            move = Vector2.up * deltaPosition.y;
+            var move = Vector2.up * deltaPosition.y;
 
             PerformMovement(move, true);
 
+            move = moveAlongGround * deltaPosition.x;
+
+            PerformMovement(move, false);
         }
 
         void PerformMovement(Vector2 move, bool yMovement)
         {
+            // distance we want to move
             var distance = move.magnitude;
+            var boundSize = gameObject.GetComponent<Renderer>().bounds.size;
+            var x = move.normalized.x * distance;
+            var y = move.normalized.y * distance;
+            var color = Color.green;
+
+
+            if (yMovement)
+            {
+                if (y < 0)
+                {
+                    y -= boundSize.y / 3;
+                }
+                else
+                {
+                    y += boundSize.y / 3;
+                }
+            }
+            else
+            {
+                if (x < 0)
+                {
+                    x -= boundSize.x / 5;
+                }
+                else
+                {
+                    x += boundSize.x / 5;
+                }
+            }
+
+            var ray = new Vector2(x, y);
 
             if (distance > minMoveDistance)
             {
-                //check if we hit anything in current direction of travel
+                // check if we hit anything in current direction of travel    
                 var count = body.Cast(move, contactFilter, hitBuffer, distance + shellRadius);
+               
+                if (count > 0)
+                {
+                    color = Color.red;
+                }
+
                 for (var i = 0; i < count; i++)
                 {
+                    // the direction pointing away from the collider that is hit
                     var currentNormal = hitBuffer[i].normal;
 
-                    //is this surface flat enough to land on?
+                    // is this surface angle flat enough to land on?
                     if (currentNormal.y > minGroundNormalY)
                     {
                         IsGrounded = true;
+
                         // if moving up, change the groundNormal to new surface normal.
                         if (yMovement)
                         {
@@ -162,10 +200,13 @@ namespace Platformer.Mechanics
                     }
                     //remove shellDistance from actual move distance.
                     var modifiedDistance = hitBuffer[i].distance - shellRadius;
+                    //var modifiedDistance = hitBuffer[i].distance - shellRadius;
                     distance = modifiedDistance < distance ? modifiedDistance : distance;
                 }
+                body.position = body.position + move.normalized * distance;
+
+                Debug.DrawRay(body.position, ray, color, 0.1f);
             }
-            body.position = body.position + move.normalized * distance;
         }
 
     }
