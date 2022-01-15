@@ -125,11 +125,11 @@ namespace Platformer.Mechanics
             // distance we want to move
             var distance = move.magnitude;
             var boundSize = gameObject.GetComponent<Renderer>().bounds.size;
+
+            //  this block is for the Debug.Raycast
             var x = move.normalized.x * distance;
             var y = move.normalized.y * distance;
             var color = Color.green;
-
-
             if (yMovement)
             {
                 if (y < 0)
@@ -152,14 +152,14 @@ namespace Platformer.Mechanics
                     x += boundSize.x / 5;
                 }
             }
-
             var ray = new Vector2(x, y);
 
             if (distance > minMoveDistance)
             {
                 // check if we hit anything in current direction of travel    
                 var count = body.Cast(move, contactFilter, hitBuffer, distance + shellRadius);
-               
+
+                //  this block is for the Debug.Raycast
                 if (count > 0)
                 {
                     color = Color.red;
@@ -205,6 +205,7 @@ namespace Platformer.Mechanics
                 }
                 body.position = body.position + move.normalized * distance;
 
+                //  this block is for the Debug.Raycast
                 Debug.DrawRay(body.position, ray, color, 0.1f);
             }
         }
