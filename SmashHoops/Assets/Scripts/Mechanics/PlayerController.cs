@@ -75,14 +75,6 @@ namespace Platformer.Mechanics
                             break;
                     }
                 }
-                else if (Input.GetButtonUp("Jump"))
-                {
-                    switch (jumpState){
-                        case JumpState.Crouched:
-                            jumpState = JumpState.ShortJump;
-                            break;
-                    }
-                }
             }
             else
             {
@@ -98,14 +90,9 @@ namespace Platformer.Mechanics
             switch (jumpState)
             {
                 case JumpState.Crouched:
-                    jumpState = JumpState.FullJump;
+                    jumpState = JumpState.Jump;
                     break;
-                case JumpState.ShortJump:
-                    jump = true;
-                    Schedule<PlayerShortJumped>().player = this;
-                    jumpState = JumpState.Flight;
-                    break;
-                case JumpState.FullJump:
+                case JumpState.Jump:
                     jump = true;
                     Schedule<PlayerFullJumped>().player = this;
                     jumpState = JumpState.Flight;
@@ -163,8 +150,7 @@ namespace Platformer.Mechanics
         {
             Grounded,
             Crouched,
-            ShortJump,
-            FullJump,
+            Jump,
             Flight,
             AirJump,
             Fall,
