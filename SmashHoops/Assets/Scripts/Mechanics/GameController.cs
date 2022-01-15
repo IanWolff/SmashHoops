@@ -23,6 +23,7 @@ namespace Platformer.Mechanics
         void OnEnable()
         {
             Instance = this;
+            Application.targetFrameRate = 60;
         }
 
         void OnDisable()
