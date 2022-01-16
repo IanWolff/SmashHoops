@@ -59,6 +59,12 @@ namespace Platformer.Mechanics
             animator = GetComponent<Animator>();
         }
 
+        protected override void FixedUpdate()
+        {
+            base.FixedUpdate();
+            UpdateJumpState();
+        }
+
         /// <summary>
         /// Detect a jump input and set the initial jump state.
         /// </summary>
@@ -83,8 +89,6 @@ namespace Platformer.Mechanics
             {
                 move.x = 0;
             }
-
-            UpdateJumpState();
             base.Update();
         }
 
