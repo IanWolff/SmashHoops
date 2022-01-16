@@ -6,8 +6,8 @@ namespace Platformer.Gameplay
     /// <summary>
     /// Fired when the player performs a Full Jump.
     /// </summary>
-    /// <typeparam name="PlayerFullJumped"></typeparam>
-    public class PlayerFullJumped : Simulation.Event<PlayerFullJumped>
+    /// <typeparam name="PlayerGroundJumped"></typeparam>
+    public class PlayerGroundJumped : Simulation.Event<PlayerGroundJumped>
     {
         public PlayerController player;
 

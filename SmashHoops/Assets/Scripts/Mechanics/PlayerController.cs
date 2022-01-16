@@ -59,6 +59,9 @@ namespace Platformer.Mechanics
             animator = GetComponent<Animator>();
         }
 
+        /// <summary>
+        /// Detect a jump input and set the initial jump state.
+        /// </summary>
         protected override void Update()
         {
             if (controlEnabled)
@@ -68,9 +71,9 @@ namespace Platformer.Mechanics
                 {
                     switch (jumpState){
                         case JumpState.Grounded:
-                            jumpState = JumpState.Crouched;
+                            jumpState = JumpState.GroundJump;
                             break;
-                        case JumpState.Flight:
+                        case JumpState.Air:
                             jumpState = JumpState.AirJump;
                             break;
                     }
@@ -80,24 +83,25 @@ namespace Platformer.Mechanics
             {
                 move.x = 0;
             }
+
             UpdateJumpState();
             base.Update();
         }
 
+        /// <summary>
+        /// Check for jump state changes and schedule jump events 
+        /// </summary>
         void UpdateJumpState()
         {
             jump = false;
             switch (jumpState)
             {
-                case JumpState.Crouched:
-                    jumpState = JumpState.Jump;
-                    break;
-                case JumpState.Jump:
+                case JumpState.GroundJump:
                     jump = true;
-                    Schedule<PlayerFullJumped>().player = this;
-                    jumpState = JumpState.Flight;
+                    Schedule<PlayerGroundJumped>().player = this;
+                    jumpState = JumpState.Air;
                     break;
-                case JumpState.Flight:
+                case JumpState.Air:
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -107,9 +111,9 @@ namespace Platformer.Mechanics
                 case JumpState.AirJump:
                     jump = true;
                     Schedule<PlayerAirJumped>().player = this;
-                    jumpState = JumpState.Fall;
+                    jumpState = JumpState.Freefall;
                     break;
-                case JumpState.Fall:
+                case JumpState.Freefall:
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -122,19 +126,11 @@ namespace Platformer.Mechanics
             }
         }
 
+        /// <summary>
+        /// Calculate velocity for grounded movement and jump states.
+        /// </summary>
         protected override void ComputeVelocity()
         {
-            if (jump && IsGrounded)
-            {
-                velocity.y = fullJumpSpeed * model.jumpModifier;
-                jump = true;
-            }
-            else if (jump)
-            {
-                velocity.y = airJumpSpeed * model.jumpModifier;
-                jump = true;
-            }
-
             if (move.x > 0.01f)
                 spriteRenderer.flipX = false;
             else if (move.x < -0.01f)
@@ -143,17 +139,27 @@ namespace Platformer.Mechanics
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
+            // Calculate jump velocity
+            if (jump && IsGrounded)
+            {
+                velocity.y = fullJumpSpeed * model.jumpModifier;
+            }
+            else if (jump)
+            {
+                velocity.y = airJumpSpeed * model.jumpModifier;
+            }
+
+            // Calculate movement velocity
             targetVelocity = move * maxSpeed;
         }
 
         public enum JumpState
         {
             Grounded,
-            Crouched,
-            Jump,
-            Flight,
+            GroundJump,
+            Air,
             AirJump,
-            Fall,
+            Freefall,
             Landed
         }
     }
