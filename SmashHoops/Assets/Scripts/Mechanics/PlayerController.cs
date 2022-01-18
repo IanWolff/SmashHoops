@@ -40,9 +40,12 @@ namespace Platformer.Mechanics
         /*internal new*/ public Collider2D collider2d;
         /*internal new*/ public AudioSource audioSource;
         public Percent percent;
-        public bool controlEnabled = true;
 
-        bool jump;
+        public bool IsActionable = true;
+        public bool controlEnabled = true;
+        private List<InputAction> inputBuffer = new List<InputAction>();
+
+        private bool jump;
         Vector2 move;
         SpriteRenderer spriteRenderer;
         internal Animator animator;
@@ -70,19 +73,13 @@ namespace Platformer.Mechanics
         /// </summary>
         protected override void Update()
         {
+            move.x = Input.GetAxis("Horizontal");
             if (controlEnabled)
             {
-                move.x = Input.GetAxis("Horizontal");
-                if (Input.GetButtonDown("Jump"))
+                BufferInput();
+                if (IsActionable)
                 {
-                    switch (jumpState){
-                        case JumpState.Grounded:
-                            jumpState = JumpState.GroundJump;
-                            break;
-                        case JumpState.Air:
-                            jumpState = JumpState.AirJump;
-                            break;
-                    }
+                    GetAction();
                 }
             }
             else
@@ -92,6 +89,47 @@ namespace Platformer.Mechanics
             base.Update();
         }
 
+        private void BufferInput()
+        {
+            if (Input.GetButtonDown("Jump"))
+            {
+                inputBuffer.Add(new InputAction(InputAction.ActionItem.Jump, Time.time));
+            }
+        }
+
+        private void GetAction()
+        {
+            if (inputBuffer.Count > 0)
+            {
+                foreach (InputAction action in inputBuffer.ToArray())
+                {
+                    inputBuffer.Remove(action);
+                    if (action.IsValid())
+                    {
+                        PerformAction(action);
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void PerformAction(InputAction action)
+        {
+            if (action.Action == InputAction.ActionItem.Jump)
+            {
+                switch (jumpState)
+                {
+                    case JumpState.Grounded:
+                        jumpState = JumpState.GroundJump;
+                        break;
+                    case JumpState.Air:
+                        jumpState = JumpState.AirJump;
+                        break;
+                }
+            }
+            IsActionable = false;
+        }
+        
         /// <summary>
         /// Check for jump state changes and schedule jump events 
         /// </summary>
@@ -101,17 +139,20 @@ namespace Platformer.Mechanics
             switch (jumpState)
             {
                 case JumpState.Grounded:
+                    IsActionable = true;
                     if (!IsGrounded && !jump)
                     {
                         jumpState = JumpState.Air;
                     }
                     break;
                 case JumpState.GroundJump:
+                    IsActionable = true;
                     jump = true;
                     Schedule<PlayerGroundJumped>().player = this;
                     jumpState = JumpState.Air;
                     break;
                 case JumpState.Air:
+                    IsActionable = true;
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -119,11 +160,14 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.AirJump:
+                    IsActionable = true;
                     jump = true;
                     Schedule<PlayerAirJumped>().player = this;
+                    IsActionable = false;
                     jumpState = JumpState.Freefall;
                     break;
                 case JumpState.Freefall:
+                    IsActionable = false;
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -131,6 +175,7 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.Landed:
+                    IsActionable = true;
                     jumpState = JumpState.Grounded;
                     break;
             }
