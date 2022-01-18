@@ -7,7 +7,7 @@ public class InputAction
     public ActionItem Action;
     public float Timestamp;
     public static float ActionDuration = 0.8f;    
-
+     
     public InputAction(ActionItem inputItem, float timeRecieved)
     {
         Action = inputItem;
@@ -28,6 +28,10 @@ public class InputAction
         Jump,
         Punch,
         Kick,
-        Special
+        Special,
+        Up,
+        Right,
+        Down,
+        Left,
     }
 }

@@ -41,10 +41,14 @@ namespace Platformer.Mechanics
         /*internal new*/ public AudioSource audioSource;
         public Percent percent;
 
+        // allows action inputs to be read
         public bool IsActionable = true;
+        // allows character movement and actions
         public bool controlEnabled = true;
+        // stores inputs as actions
         private List<InputAction> inputBuffer = new List<InputAction>();
 
+        // causes character to jump on update
         private bool jump;
         Vector2 move;
         SpriteRenderer spriteRenderer;
@@ -69,7 +73,7 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
-        /// Detect a jump input and set the initial jump state.
+        /// Detect horizontal movement and perform actions
         /// </summary>
         protected override void Update()
         {
@@ -84,6 +88,7 @@ namespace Platformer.Mechanics
             }
             else
             {
+                // prevent movement
                 move.x = 0;
             }
             base.Update();
@@ -91,9 +96,11 @@ namespace Platformer.Mechanics
 
         private void BufferInput()
         {
-            if (Input.GetButtonDown("Jump"))
-            {
-                inputBuffer.Add(new InputAction(InputAction.ActionItem.Jump, Time.time));
+            foreach (InputAction.ActionItem action in System.Enum.GetValues(typeof(InputAction.ActionItem))) {
+                if (Input.GetButtonDown(action.ToString()))
+                {
+                    inputBuffer.Add(new InputAction(action, Time.time));
+                }
             }
         }
 
