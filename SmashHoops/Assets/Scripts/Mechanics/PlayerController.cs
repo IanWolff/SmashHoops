@@ -100,6 +100,12 @@ namespace Platformer.Mechanics
             jump = false;
             switch (jumpState)
             {
+                case JumpState.Grounded:
+                    if (!IsGrounded && !jump)
+                    {
+                        jumpState = JumpState.Air;
+                    }
+                    break;
                 case JumpState.GroundJump:
                     jump = true;
                     Schedule<PlayerGroundJumped>().player = this;
