@@ -127,7 +127,7 @@ namespace Platformer.Mechanics
                         break;
                 }
             }
-            IsActionable = false;
+            //IsActionable = false;
         }
         
         /// <summary>
@@ -139,20 +139,17 @@ namespace Platformer.Mechanics
             switch (jumpState)
             {
                 case JumpState.Grounded:
-                    IsActionable = true;
                     if (!IsGrounded && !jump)
                     {
                         jumpState = JumpState.Air;
                     }
                     break;
                 case JumpState.GroundJump:
-                    IsActionable = true;
                     jump = true;
                     Schedule<PlayerGroundJumped>().player = this;
                     jumpState = JumpState.Air;
                     break;
                 case JumpState.Air:
-                    IsActionable = true;
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -160,14 +157,11 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.AirJump:
-                    IsActionable = true;
                     jump = true;
                     Schedule<PlayerAirJumped>().player = this;
-                    IsActionable = false;
                     jumpState = JumpState.Freefall;
                     break;
                 case JumpState.Freefall:
-                    IsActionable = false;
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -175,7 +169,6 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.Landed:
-                    IsActionable = true;
                     jumpState = JumpState.Grounded;
                     break;
             }
