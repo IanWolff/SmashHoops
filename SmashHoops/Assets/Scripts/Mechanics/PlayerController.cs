@@ -30,9 +30,8 @@ namespace Platformer.Mechanics
         public AudioClip ouchAudio;
 
         // constants
-        public float maxSpeed = 6;
-        public float shortJumpSpeed = 6;
-        public float fullJumpSpeed = 12;
+        public float maxSpeed = 3;
+        public float groundJumpSpeed = 12;
         public float airJumpSpeed = 14;
 
         // flags
@@ -46,11 +45,11 @@ namespace Platformer.Mechanics
         // states
         public MoveState moveState = MoveState.None;
         public JumpState jumpState = JumpState.Grounded;
+        public DirectionState directionState = DirectionState.Forward;
 
         // values
         Vector2 move;
-        InputAction.ActionItem forwardAction = InputAction.ActionItem.Right;
-
+        
         // input buffer
         private List<InputAction> inputBuffer = new List<InputAction>();
        
@@ -71,6 +70,7 @@ namespace Platformer.Mechanics
             base.FixedUpdate();
             UpdateJumpState();
             UpdateMoveState();
+            UpdateDirectionState();
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Platformer.Mechanics
             move.x = Input.GetAxis("Horizontal");
             if (controlEnabled)
             {
-                isMoving = move.x != 0;
+                isMoving = Input.GetAxisRaw("Horizontal") != 0;
                 BufferInput();
                 if (canAction)
                 {
@@ -199,17 +199,37 @@ namespace Platformer.Mechanics
             switch (moveState)
             {
                 case MoveState.None:
-                    if (isMoving)
+                    if (velocity.x != 0)
                     {
                         moveState = MoveState.Move;
                     }
                     break;
                 case MoveState.Move:
-                    if (!isMoving)
+                    if (velocity.x == 0)
                     {
                         moveState = MoveState.None;
                     }
                     break;
+            }
+        }
+
+
+        /// <summary>
+        /// Update direction state.
+        /// </summary>
+        void UpdateDirectionState()
+        {
+            if (spriteRenderer.flipX && velocity.x > 0)
+            {
+                directionState = DirectionState.Backward;
+            } 
+            else if (!spriteRenderer.flipX && velocity.x < 0)
+            {
+                directionState = DirectionState.Backward;
+            }
+            else
+            {
+                directionState = DirectionState.Forward;
             }
         }
 
@@ -223,12 +243,10 @@ namespace Platformer.Mechanics
                 if (move.x > 0.01f)
                 {
                     spriteRenderer.flipX = false;
-                    forwardAction = InputAction.ActionItem.Right;
                 }
                 else if (move.x < -0.01f)
                 {
                     spriteRenderer.flipX = true;
-                    forwardAction = InputAction.ActionItem.Left;
                 }
             }
 
@@ -238,7 +256,7 @@ namespace Platformer.Mechanics
             // Calculate isJumping velocity
             if (isJumping && IsGrounded)
             {
-                velocity.y = fullJumpSpeed * model.jumpModifier;
+                velocity.y = groundJumpSpeed * model.jumpModifier;
             }
             else if (isJumping)
             {
@@ -266,6 +284,12 @@ namespace Platformer.Mechanics
             Stun,
             ForwardDash,
             BackDash
+        }
+
+        public enum DirectionState
+        {
+            Forward,
+            Backward
         }
     }
 }
