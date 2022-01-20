@@ -14,42 +14,44 @@ namespace Platformer.Mechanics
     /// </summary>
     public class PlayerController : KinematicObject
     {
+        // internal
+        internal Animator animator;
+        readonly PlatformerModel model = Simulation.GetModel<PlatformerModel>();
+        public Collider2D collider2d;
+        public AudioSource audioSource;
+        public Percent percent;
+        SpriteRenderer spriteRenderer;
+        public Bounds Bounds => collider2d.bounds;
+
+        // audio files
         public AudioClip jumpGroundAudio;
         public AudioClip jumpAirAudio;
         public AudioClip respawnAudio;
         public AudioClip ouchAudio;
 
-        /// <summary>
-        /// Max horizontal speed of the player.
-        /// </summary>
+        // constants
         public float maxSpeed = 6;
-        /// <summary>
-        /// Initial jump velocity at the start of a short jump.
-        /// </summary>
         public float shortJumpSpeed = 6;
-        /// <summary>        
-        /// Initial jump velocity at the start of a full jump.
-        /// </summary>
         public float fullJumpSpeed = 12;
-        /// <summary>
-        /// Initial jump velocity at the start of an air jump.
-        /// </summary>
         public float airJumpSpeed = 14;
 
-        public JumpState jumpState = JumpState.Grounded;
-        /*internal new*/ public Collider2D collider2d;
-        /*internal new*/ public AudioSource audioSource;
-        public Percent percent;
+        // flags
         public bool controlEnabled = true;
+        public bool canAction = true;
+        public bool canDash = true;
+        public bool isJumping = false;
+        public bool isMoving = false;
 
-        bool jump;
+        // states
+        public MoveState moveState = MoveState.None;
+        public JumpState jumpState = JumpState.Grounded;
+
+        // values
         Vector2 move;
-        SpriteRenderer spriteRenderer;
-        internal Animator animator;
-        readonly PlatformerModel model = Simulation.GetModel<PlatformerModel>();
 
-        public Bounds Bounds => collider2d.bounds;
-
+        // input buffer
+        private List<InputAction> inputBuffer = new List<InputAction>();
+       
         void Awake()
         {
             percent = GetComponent<Percent>();
@@ -59,30 +61,29 @@ namespace Platformer.Mechanics
             animator = GetComponent<Animator>();
         }
 
+        /// <summary>
+        /// Execute KinematicObject velocity updates and update jump states.
+        /// </summary>
         protected override void FixedUpdate()
         {
             base.FixedUpdate();
             UpdateJumpState();
+            UpdateMoveState();
         }
 
         /// <summary>
-        /// Detect a jump input and set the initial jump state.
+        /// Detect horizontal movement and get actions from input buffer.
         /// </summary>
         protected override void Update()
         {
+            move.x = Input.GetAxis("Horizontal");
             if (controlEnabled)
             {
-                move.x = Input.GetAxis("Horizontal");
-                if (Input.GetButtonDown("Jump"))
+                isMoving = move.x != 0;
+                BufferInput();
+                if (canAction)
                 {
-                    switch (jumpState){
-                        case JumpState.Grounded:
-                            jumpState = JumpState.GroundJump;
-                            break;
-                        case JumpState.Air:
-                            jumpState = JumpState.AirJump;
-                            break;
-                    }
+                    GetAction();
                 }
             }
             else
@@ -93,21 +94,73 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
-        /// Check for jump state changes and schedule jump events 
+        /// Convert inputs to actions and add to input buffer.
+        /// </summary>
+        private void BufferInput()
+        {
+            foreach (InputAction.ActionItem action in System.Enum.GetValues(typeof(InputAction.ActionItem))) {
+                if (Input.GetButtonDown(action.ToString()))
+                {
+                    inputBuffer.Add(new InputAction(action, Time.time));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes the oldest input from input buffer and performs action.
+        /// </summary>
+        private void GetAction()
+        {
+            if (inputBuffer.Count > 0)
+            {
+                foreach (InputAction action in inputBuffer.ToArray())
+                {
+                    inputBuffer.Remove(action);
+                    if (action.IsValid())
+                    {
+                        PerformAction(action);
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Perform actions and set jump state.
+        /// </summary>
+        private void PerformAction(InputAction action)
+        {
+            if (action.Action == InputAction.ActionItem.Jump)
+            {
+                switch (jumpState)
+                {
+                    case JumpState.Grounded:
+                        jumpState = JumpState.GroundJump;
+                        break;
+                    case JumpState.Air:
+                        jumpState = JumpState.AirJump;
+                        break;
+                }
+            }
+            //canAction = false;
+        }
+        
+        /// <summary>
+        /// Check for jump state changes and schedule jump events.
         /// </summary>
         void UpdateJumpState()
         {
-            jump = false;
+            isJumping = false;
             switch (jumpState)
             {
                 case JumpState.Grounded:
-                    if (!IsGrounded && !jump)
+                    if (!IsGrounded && !isJumping)
                     {
                         jumpState = JumpState.Air;
                     }
                     break;
                 case JumpState.GroundJump:
-                    jump = true;
+                    isJumping = true;
                     Schedule<PlayerGroundJumped>().player = this;
                     jumpState = JumpState.Air;
                     break;
@@ -119,7 +172,7 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.AirJump:
-                    jump = true;
+                    isJumping = true;
                     Schedule<PlayerAirJumped>().player = this;
                     jumpState = JumpState.Freefall;
                     break;
@@ -137,24 +190,49 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
-        /// Calculate velocity for grounded movement and jump states.
+        /// Check for move state changes. 
+        /// </summary>
+        void UpdateMoveState()
+        {
+            switch (moveState)
+            {
+                case MoveState.None:
+                    if (isMoving)
+                    {
+                        moveState = MoveState.Move;
+                    }
+                    break;
+                case MoveState.Move:
+                    if (!isMoving)
+                    {
+                        moveState = MoveState.None;
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Calculate velocity for grounded movement and jumps.
         /// </summary>
         protected override void ComputeVelocity()
         {
-            if (move.x > 0.01f)
-                spriteRenderer.flipX = false;
-            else if (move.x < -0.01f)
-                spriteRenderer.flipX = true;
+            if (moveState != MoveState.BackDash)
+            {
+                if (move.x > 0.01f)
+                    spriteRenderer.flipX = false;
+                else if (move.x < -0.01f)
+                    spriteRenderer.flipX = true;
+            }
 
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
-            // Calculate jump velocity
-            if (jump && IsGrounded)
+            // Calculate isJumping velocity
+            if (isJumping && IsGrounded)
             {
                 velocity.y = fullJumpSpeed * model.jumpModifier;
             }
-            else if (jump)
+            else if (isJumping)
             {
                 velocity.y = airJumpSpeed * model.jumpModifier;
             }
@@ -170,7 +248,16 @@ namespace Platformer.Mechanics
             Air,
             AirJump,
             Freefall,
-            Landed
+            Landed,
+        }
+
+        public enum MoveState
+        {
+            None,
+            Move,
+            Stun,
+            ForwardDash,
+            BackDash
         }
     }
 }
