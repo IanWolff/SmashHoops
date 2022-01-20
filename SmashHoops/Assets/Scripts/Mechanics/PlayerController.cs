@@ -38,6 +38,9 @@ namespace Platformer.Mechanics
         public bool controlEnabled = true;
         public bool canAction = true;
         public bool canDash = true;
+        public bool canJump = true;
+        public bool canAttack = true;
+        public bool isBusy = false;
         public bool isDashing = false;
         public bool isJumping = false;
         public bool isMoving = false;
@@ -45,6 +48,7 @@ namespace Platformer.Mechanics
         // states
         public MoveState moveState = MoveState.None;
         public JumpState jumpState = JumpState.Grounded;
+        public ActionState actionState = ActionState.None;
         public DirectionState directionState = DirectionState.Forward;
 
         // values
@@ -68,6 +72,7 @@ namespace Platformer.Mechanics
         protected override void FixedUpdate()
         {
             base.FixedUpdate();
+            UpdateActionState();
             UpdateJumpState();
             UpdateMoveState();
             UpdateDirectionState();
@@ -118,7 +123,7 @@ namespace Platformer.Mechanics
                 foreach (InputAction action in inputBuffer.ToArray())
                 {
                     inputBuffer.Remove(action);
-                    if (action.IsValid())
+                    if (action.IsValid() && canAction)
                     {
                         PerformAction(action);
                         break;
@@ -128,22 +133,22 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
-        /// Perform actions and set jump state.
+        /// Perform actions.
         /// </summary>
         private void PerformAction(InputAction action)
         {
-            if (action.Action == InputAction.ActionItem.Jump)
-            {
-                switch (jumpState)
-                {
-                    case JumpState.Grounded:
-                        jumpState = JumpState.GroundJump;
-                        break;
-                    case JumpState.Air:
-                        jumpState = JumpState.AirJump;
-                        break;
-                }
-            }
+            if (action.Action == InputAction.ActionItem.Punch && canAttack)
+                actionState = ActionState.Punch;
+            else if (action.Action == InputAction.ActionItem.Kick && canAttack)
+                actionState = ActionState.Kick;
+            else if (action.Action == InputAction.ActionItem.Special && canAttack)
+                actionState = ActionState.Special;
+            else if (action.Action == InputAction.ActionItem.Dash && canDash)
+                actionState = ActionState.Dash;
+            else if (action.Action == InputAction.ActionItem.Jump && canJump)
+                actionState = ActionState.Jump;
+            else
+                actionState = ActionState.None;
             //canAction = false;
         }
         
@@ -153,18 +158,28 @@ namespace Platformer.Mechanics
         void UpdateJumpState()
         {
             isJumping = false;
+            if (actionState == ActionState.Jump)
+            {
+                if (IsGrounded)
+                    jumpState = JumpState.GroundJump;
+                else
+                    jumpState = JumpState.AirJump;
+            }
             switch (jumpState)
             {
                 case JumpState.Grounded:
                     if (!IsGrounded && !isJumping)
-                    {
                         jumpState = JumpState.Air;
-                    }
                     break;
                 case JumpState.GroundJump:
                     isJumping = true;
                     Schedule<PlayerGroundJumped>().player = this;
                     jumpState = JumpState.Air;
+                    break;
+                case JumpState.AirJump:
+                    isJumping = true;
+                    Schedule<PlayerAirJumped>().player = this;
+                    jumpState = JumpState.Freefall;
                     break;
                 case JumpState.Air:
                     if (IsGrounded)
@@ -173,12 +188,8 @@ namespace Platformer.Mechanics
                         jumpState = JumpState.Landed;
                     }
                     break;
-                case JumpState.AirJump:
-                    isJumping = true;
-                    Schedule<PlayerAirJumped>().player = this;
-                    jumpState = JumpState.Freefall;
-                    break;
                 case JumpState.Freefall:
+                    canJump = false;
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -186,6 +197,7 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.Landed:
+                    canJump = true;
                     jumpState = JumpState.Grounded;
                     break;
             }
@@ -219,17 +231,37 @@ namespace Platformer.Mechanics
         /// </summary>
         void UpdateDirectionState()
         {
-            if (spriteRenderer.flipX && velocity.x > 0)
+            if ((spriteRenderer.flipX && velocity.x > 0) || (!spriteRenderer.flipX && velocity.x < 0))
             {
                 directionState = DirectionState.Backward;
             } 
-            else if (!spriteRenderer.flipX && velocity.x < 0)
-            {
-                directionState = DirectionState.Backward;
-            }
             else
             {
                 directionState = DirectionState.Forward;
+            }
+        }
+
+        /// <summary>
+        /// Update action state.
+        /// </summary>
+        void UpdateActionState()
+        {
+            switch (actionState)
+            {
+                case ActionState.Dash:
+                    if (jumpState == JumpState.Landed)
+                    {
+                        actionState = ActionState.None;
+                        canDash = true;
+                    }
+                    break;
+                case ActionState.Jump:
+                    if (isJumping)
+                    {
+                        actionState = ActionState.None;
+                        canDash = true;
+                    }
+                    break;
             }
         }
 
@@ -281,9 +313,18 @@ namespace Platformer.Mechanics
         {
             None,
             Move,
-            Stun,
+        }
+
+        public enum ActionState
+        {
+            None,
+            Punch,
+            Kick,
+            Special,
+            Dash,
             ForwardDash,
-            BackDash
+            BackDash,
+            Jump
         }
 
         public enum DirectionState

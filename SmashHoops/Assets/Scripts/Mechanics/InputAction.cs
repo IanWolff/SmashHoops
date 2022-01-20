@@ -33,5 +33,6 @@ public class InputAction
         Right,
         Down,
         Left,
+        Dash
     }
 }
