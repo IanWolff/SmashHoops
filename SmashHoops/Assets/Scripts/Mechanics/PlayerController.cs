@@ -35,11 +35,15 @@ namespace Platformer.Mechanics
         public float fullJumpSpeed = 12;
         public float airJumpSpeed = 14;
 
-        // flags and status
+        // flags
         public bool controlEnabled = true;
         public bool canAction = true;
         public bool canDash = true;
-        private bool isJumping = false;
+        public bool isJumping = false;
+        public bool isMoving = false;
+
+        // states
+        public MoveState moveState = MoveState.None;
         public JumpState jumpState = JumpState.Grounded;
 
         // values
@@ -64,6 +68,7 @@ namespace Platformer.Mechanics
         {
             base.FixedUpdate();
             UpdateJumpState();
+            UpdateMoveState();
         }
 
         /// <summary>
@@ -74,6 +79,7 @@ namespace Platformer.Mechanics
             move.x = Input.GetAxis("Horizontal");
             if (controlEnabled)
             {
+                isMoving = move.x != 0;
                 BufferInput();
                 if (canAction)
                 {
@@ -140,7 +146,7 @@ namespace Platformer.Mechanics
         }
         
         /// <summary>
-        /// Check for state changes and schedule jump events 
+        /// Check for jump state changes and schedule jump events.
         /// </summary>
         void UpdateJumpState()
         {
@@ -184,14 +190,39 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
+        /// Check for move state changes. 
+        /// </summary>
+        void UpdateMoveState()
+        {
+            switch (moveState)
+            {
+                case MoveState.None:
+                    if (isMoving)
+                    {
+                        moveState = MoveState.Move;
+                    }
+                    break;
+                case MoveState.Move:
+                    if (!isMoving)
+                    {
+                        moveState = MoveState.None;
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Calculate velocity for grounded movement and jumps.
         /// </summary>
         protected override void ComputeVelocity()
         {
-            if (move.x > 0.01f)
-                spriteRenderer.flipX = false;
-            else if (move.x < -0.01f)
-                spriteRenderer.flipX = true;
+            if (moveState != MoveState.BackDash)
+            {
+                if (move.x > 0.01f)
+                    spriteRenderer.flipX = false;
+                else if (move.x < -0.01f)
+                    spriteRenderer.flipX = true;
+            }
 
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
@@ -217,7 +248,16 @@ namespace Platformer.Mechanics
             Air,
             AirJump,
             Freefall,
-            Landed
+            Landed,
+        }
+
+        public enum MoveState
+        {
+            None,
+            Move,
+            Stun,
+            ForwardDash,
+            BackDash
         }
     }
 }
