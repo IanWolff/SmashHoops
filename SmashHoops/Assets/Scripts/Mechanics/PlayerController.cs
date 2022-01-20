@@ -39,6 +39,7 @@ namespace Platformer.Mechanics
         public bool controlEnabled = true;
         public bool canAction = true;
         public bool canDash = true;
+        public bool isDashing = false;
         public bool isJumping = false;
         public bool isMoving = false;
 
@@ -48,6 +49,7 @@ namespace Platformer.Mechanics
 
         // values
         Vector2 move;
+        InputAction.ActionItem forwardAction = InputAction.ActionItem.Right;
 
         // input buffer
         private List<InputAction> inputBuffer = new List<InputAction>();
@@ -216,12 +218,18 @@ namespace Platformer.Mechanics
         /// </summary>
         protected override void ComputeVelocity()
         {
-            if (moveState != MoveState.BackDash)
+            if (jumpState != JumpState.Freefall && jumpState != JumpState.Air)
             {
                 if (move.x > 0.01f)
+                {
                     spriteRenderer.flipX = false;
+                    forwardAction = InputAction.ActionItem.Right;
+                }
                 else if (move.x < -0.01f)
+                {
                     spriteRenderer.flipX = true;
+                    forwardAction = InputAction.ActionItem.Left;
+                }
             }
 
             animator.SetBool("grounded", IsGrounded);
