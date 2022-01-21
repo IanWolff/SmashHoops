@@ -198,6 +198,7 @@ namespace Platformer.Mechanics
                     break;
                 case JumpState.Landed:
                     canJump = true;
+                    canDash = true;
                     jumpState = JumpState.Grounded;
                     break;
             }
@@ -246,14 +247,24 @@ namespace Platformer.Mechanics
         /// </summary>
         void UpdateActionState()
         {
+            isDashing = false;
             switch (actionState)
             {
                 case ActionState.Dash:
-                    if (jumpState == JumpState.Landed)
-                    {
-                        actionState = ActionState.None;
-                        canDash = true;
-                    }
+                    if (directionState == DirectionState.Forward)
+                        actionState = ActionState.ForwardDash;
+                    else
+                        actionState = ActionState.BackDash;
+                    break;
+                case ActionState.ForwardDash:
+                    isDashing = true;
+                    canDash = IsGrounded;
+                    actionState = ActionState.None;
+                    break;
+                case ActionState.BackDash:
+                    isDashing = true;
+                    canDash = IsGrounded;
+                    actionState = ActionState.None;
                     break;
                 case ActionState.Jump:
                     if (isJumping)
@@ -285,7 +296,7 @@ namespace Platformer.Mechanics
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
-            // Calculate isJumping velocity
+            // Calculate jump velocity
             if (isJumping && IsGrounded)
             {
                 velocity.y = groundJumpSpeed * model.jumpModifier;
@@ -294,6 +305,9 @@ namespace Platformer.Mechanics
             {
                 velocity.y = airJumpSpeed * model.jumpModifier;
             }
+
+            // Calculate dash velocity
+            
 
             // Calculate movement velocity
             targetVelocity = move * maxSpeed;
