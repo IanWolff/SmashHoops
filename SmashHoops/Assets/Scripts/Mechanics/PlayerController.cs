@@ -32,10 +32,10 @@ namespace Platformer.Mechanics
         public AudioClip ouchAudio;
 
         // constants
-        public float maxSpeed = 6;
-        private float groundJumpSpeed = 12;
-        private float airJumpSpeed = 12;
-        private float dashSpeed = 18;
+        public float maxSpeed = 3;
+        private float groundJumpSpeed = 10;
+        private float airJumpSpeed = 10;
+        private float dashSpeed = 12;
 
         // frame data
         private float dashCooldown = 0.5f;
@@ -315,7 +315,7 @@ namespace Platformer.Mechanics
         {
             
             // Flip sprite when not jumping
-            if (jumpState == JumpState.Grounded || isJumping)
+            if (IsGrounded || isJumping)
             {
                 if (move.x > 0.01f)
                 {
@@ -352,7 +352,7 @@ namespace Platformer.Mechanics
                 if (dashTimer <= 0f)
                 {
                     isDashing = false;
-                    maxSpeed = 6;
+                    maxSpeed = 3;
                     canMove = true;
                 }
             }
