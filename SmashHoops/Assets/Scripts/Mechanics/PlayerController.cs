@@ -5,6 +5,7 @@ using Platformer.Gameplay;
 using static Platformer.Core.Simulation;
 using Platformer.Model;
 using Platformer.Core;
+using System;
 
 namespace Platformer.Mechanics
 {
@@ -21,6 +22,7 @@ namespace Platformer.Mechanics
         public AudioSource audioSource;
         public Percent percent;
         SpriteRenderer spriteRenderer;
+        Rigidbody2D rb;
         public Bounds Bounds => collider2d.bounds;
 
         // audio files
@@ -30,16 +32,22 @@ namespace Platformer.Mechanics
         public AudioClip ouchAudio;
 
         // constants
-        public float maxSpeed = 3;
-        public float groundJumpSpeed = 12;
-        public float airJumpSpeed = 14;
+        public float maxSpeed = 6;
+        private float groundJumpSpeed = 12;
+        private float airJumpSpeed = 12;
+        private float dashSpeed = 18;
+
+        private float dashCooldown = 0.5f;
 
         // flags
         public bool controlEnabled = true;
+
+        public bool canMove = true;
         public bool canAction = true;
         public bool canDash = true;
         public bool canJump = true;
         public bool canAttack = true;
+
         public bool isBusy = false;
         public bool isDashing = false;
         public bool isJumping = false;
@@ -51,12 +59,21 @@ namespace Platformer.Mechanics
         public ActionState actionState = ActionState.None;
         public DirectionState directionState = DirectionState.Forward;
 
+        // timers
+        float dashTimer = 0f;
+        float dashCooler = 0f;
+
         // values
         Vector2 move;
         
         // input buffer
         private List<InputAction> inputBuffer = new List<InputAction>();
-       
+
+        private void Start()
+        {
+            rb = GetComponent<Rigidbody2D>();
+        }
+
         void Awake()
         {
             percent = GetComponent<Percent>();
@@ -83,7 +100,8 @@ namespace Platformer.Mechanics
         /// </summary>
         protected override void Update()
         {
-            move.x = Input.GetAxis("Horizontal");
+            if (canMove)
+                move.x = Input.GetAxis("Horizontal");
             if (controlEnabled)
             {
                 isMoving = Input.GetAxisRaw("Horizontal") != 0;
@@ -97,7 +115,16 @@ namespace Platformer.Mechanics
             {
                 move.x = 0;
             }
+            decrementTimers();
             base.Update();
+        }
+
+        private void decrementTimers()
+        {
+            if (dashCooler > 0)
+                dashCooler -= Time.deltaTime;
+            else
+                dashCooler = dashCooldown;
         }
 
         /// <summary>
@@ -230,15 +257,17 @@ namespace Platformer.Mechanics
         /// <summary>
         /// Update direction state.
         /// </summary>
-        void UpdateDirectionState()
+        float UpdateDirectionState()
         {
             if ((spriteRenderer.flipX && velocity.x > 0) || (!spriteRenderer.flipX && velocity.x < 0))
             {
                 directionState = DirectionState.Backward;
+                return -1;
             } 
             else
             {
                 directionState = DirectionState.Forward;
+                return 1;
             }
         }
 
@@ -247,22 +276,26 @@ namespace Platformer.Mechanics
         /// </summary>
         void UpdateActionState()
         {
-            isDashing = false;
             switch (actionState)
             {
                 case ActionState.Dash:
-                    if (directionState == DirectionState.Forward)
-                        actionState = ActionState.ForwardDash;
-                    else
-                        actionState = ActionState.BackDash;
+                    if (dashCooler > 0f)
+                    {
+                        if (directionState == DirectionState.Forward)
+                            actionState = ActionState.ForwardDash;
+                        else
+                            actionState = ActionState.BackDash;
+                    }
                     break;
                 case ActionState.ForwardDash:
                     isDashing = true;
+                    dashTimer = dashCooldown;
                     canDash = IsGrounded;
                     actionState = ActionState.None;
                     break;
                 case ActionState.BackDash:
                     isDashing = true;
+                    dashTimer = dashCooldown;
                     canDash = IsGrounded;
                     actionState = ActionState.None;
                     break;
@@ -281,6 +314,8 @@ namespace Platformer.Mechanics
         /// </summary>
         protected override void ComputeVelocity()
         {
+            
+            // Flip sprite when not jumping
             if (jumpState != JumpState.Freefall && jumpState != JumpState.Air)
             {
                 if (move.x > 0.01f)
@@ -307,8 +342,21 @@ namespace Platformer.Mechanics
             }
 
             // Calculate dash velocity
-            
-
+            if (isDashing)
+            {
+                if (!IsGrounded)
+                    velocity.y = model.jumpModifier;
+                velocity.x = UpdateDirectionState() * dashSpeed;
+                dashTimer -= Time.deltaTime * 8;
+                maxSpeed = dashSpeed;
+                canMove = false;
+                if (dashTimer <= 0f)
+                {
+                    isDashing = false;
+                    maxSpeed = 6;
+                    canMove = true;
+                }
+            }
             // Calculate movement velocity
             targetVelocity = move * maxSpeed;
         }
