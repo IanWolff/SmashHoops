@@ -315,7 +315,7 @@ namespace Platformer.Mechanics
         {
             
             // Flip sprite when not jumping
-            if (jumpState != JumpState.Freefall && jumpState != JumpState.Air)
+            if (jumpState == JumpState.Grounded || isJumping)
             {
                 if (move.x > 0.01f)
                 {
