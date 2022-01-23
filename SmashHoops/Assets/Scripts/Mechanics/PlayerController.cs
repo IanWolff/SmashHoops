@@ -37,6 +37,7 @@ namespace Platformer.Mechanics
         private float airJumpSpeed = 12;
         private float dashSpeed = 18;
 
+        // frame data
         private float dashCooldown = 0.5f;
 
         // flags
@@ -46,7 +47,9 @@ namespace Platformer.Mechanics
         public bool canAction = true;
         public bool canDash = true;
         public bool canJump = true;
-        public bool canAttack = true;
+        public bool canPunch = true;
+        public bool canKick = true;
+        public bool canSpecial = true;
 
         public bool isBusy = false;
         public bool isDashing = false;
@@ -69,13 +72,9 @@ namespace Platformer.Mechanics
         // input buffer
         private List<InputAction> inputBuffer = new List<InputAction>();
 
-        private void Start()
-        {
-            rb = GetComponent<Rigidbody2D>();
-        }
-
         void Awake()
         {
+            rb = GetComponent<Rigidbody2D>();
             percent = GetComponent<Percent>();
             audioSource = GetComponent<AudioSource>();
             collider2d = GetComponent<Collider2D>();
@@ -101,7 +100,7 @@ namespace Platformer.Mechanics
         protected override void Update()
         {
             if (canMove)
-                move.x = Input.GetAxis("Horizontal");
+                move.x = Input.GetAxisRaw("Horizontal");
             if (controlEnabled)
             {
                 isMoving = Input.GetAxisRaw("Horizontal") != 0;
@@ -164,11 +163,11 @@ namespace Platformer.Mechanics
         /// </summary>
         private void PerformAction(InputAction action)
         {
-            if (action.Action == InputAction.ActionItem.Punch && canAttack)
+            if (action.Action == InputAction.ActionItem.Punch && canPunch)
                 actionState = ActionState.Punch;
-            else if (action.Action == InputAction.ActionItem.Kick && canAttack)
+            else if (action.Action == InputAction.ActionItem.Kick && canKick)
                 actionState = ActionState.Kick;
-            else if (action.Action == InputAction.ActionItem.Special && canAttack)
+            else if (action.Action == InputAction.ActionItem.Special && canSpecial)
                 actionState = ActionState.Special;
             else if (action.Action == InputAction.ActionItem.Dash && canDash)
                 actionState = ActionState.Dash;
@@ -370,7 +369,6 @@ namespace Platformer.Mechanics
             Freefall,
             Landed,
         }
-
         public enum MoveState
         {
             None,
