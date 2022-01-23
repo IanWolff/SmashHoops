@@ -5,6 +5,7 @@ using Platformer.Gameplay;
 using static Platformer.Core.Simulation;
 using Platformer.Model;
 using Platformer.Core;
+using System;
 
 namespace Platformer.Mechanics
 {
@@ -21,6 +22,7 @@ namespace Platformer.Mechanics
         public AudioSource audioSource;
         public Percent percent;
         SpriteRenderer spriteRenderer;
+        Rigidbody2D rb;
         public Bounds Bounds => collider2d.bounds;
 
         // audio files
@@ -31,29 +33,48 @@ namespace Platformer.Mechanics
 
         // constants
         public float maxSpeed = 6;
-        public float shortJumpSpeed = 6;
-        public float fullJumpSpeed = 12;
-        public float airJumpSpeed = 14;
+        private float groundJumpSpeed = 12;
+        private float airJumpSpeed = 12;
+        private float dashSpeed = 18;
+
+        // frame data
+        private float dashCooldown = 0.5f;
 
         // flags
         public bool controlEnabled = true;
+
+        public bool canMove = true;
         public bool canAction = true;
         public bool canDash = true;
+        public bool canJump = true;
+        public bool canPunch = true;
+        public bool canKick = true;
+        public bool canSpecial = true;
+
+        public bool isBusy = false;
+        public bool isDashing = false;
         public bool isJumping = false;
         public bool isMoving = false;
 
         // states
         public MoveState moveState = MoveState.None;
         public JumpState jumpState = JumpState.Grounded;
+        public ActionState actionState = ActionState.None;
+        public DirectionState directionState = DirectionState.Forward;
+
+        // timers
+        float dashTimer = 0f;
+        float dashCooler = 0f;
 
         // values
         Vector2 move;
-
+        
         // input buffer
         private List<InputAction> inputBuffer = new List<InputAction>();
-       
+
         void Awake()
         {
+            rb = GetComponent<Rigidbody2D>();
             percent = GetComponent<Percent>();
             audioSource = GetComponent<AudioSource>();
             collider2d = GetComponent<Collider2D>();
@@ -67,8 +88,10 @@ namespace Platformer.Mechanics
         protected override void FixedUpdate()
         {
             base.FixedUpdate();
+            UpdateActionState();
             UpdateJumpState();
             UpdateMoveState();
+            UpdateDirectionState();
         }
 
         /// <summary>
@@ -76,10 +99,11 @@ namespace Platformer.Mechanics
         /// </summary>
         protected override void Update()
         {
-            move.x = Input.GetAxis("Horizontal");
+            if (canMove)
+                move.x = Input.GetAxisRaw("Horizontal");
             if (controlEnabled)
             {
-                isMoving = move.x != 0;
+                isMoving = Input.GetAxisRaw("Horizontal") != 0;
                 BufferInput();
                 if (canAction)
                 {
@@ -90,7 +114,16 @@ namespace Platformer.Mechanics
             {
                 move.x = 0;
             }
+            decrementTimers();
             base.Update();
+        }
+
+        private void decrementTimers()
+        {
+            if (dashCooler > 0)
+                dashCooler -= Time.deltaTime;
+            else
+                dashCooler = dashCooldown;
         }
 
         /// <summary>
@@ -116,7 +149,7 @@ namespace Platformer.Mechanics
                 foreach (InputAction action in inputBuffer.ToArray())
                 {
                     inputBuffer.Remove(action);
-                    if (action.IsValid())
+                    if (action.IsValid() && canAction)
                     {
                         PerformAction(action);
                         break;
@@ -126,22 +159,22 @@ namespace Platformer.Mechanics
         }
 
         /// <summary>
-        /// Perform actions and set jump state.
+        /// Perform actions.
         /// </summary>
         private void PerformAction(InputAction action)
         {
-            if (action.Action == InputAction.ActionItem.Jump)
-            {
-                switch (jumpState)
-                {
-                    case JumpState.Grounded:
-                        jumpState = JumpState.GroundJump;
-                        break;
-                    case JumpState.Air:
-                        jumpState = JumpState.AirJump;
-                        break;
-                }
-            }
+            if (action.Action == InputAction.ActionItem.Punch && canPunch)
+                actionState = ActionState.Punch;
+            else if (action.Action == InputAction.ActionItem.Kick && canKick)
+                actionState = ActionState.Kick;
+            else if (action.Action == InputAction.ActionItem.Special && canSpecial)
+                actionState = ActionState.Special;
+            else if (action.Action == InputAction.ActionItem.Dash && canDash)
+                actionState = ActionState.Dash;
+            else if (action.Action == InputAction.ActionItem.Jump && canJump)
+                actionState = ActionState.Jump;
+            else
+                actionState = ActionState.None;
             //canAction = false;
         }
         
@@ -151,18 +184,28 @@ namespace Platformer.Mechanics
         void UpdateJumpState()
         {
             isJumping = false;
+            if (actionState == ActionState.Jump)
+            {
+                if (IsGrounded)
+                    jumpState = JumpState.GroundJump;
+                else
+                    jumpState = JumpState.AirJump;
+            }
             switch (jumpState)
             {
                 case JumpState.Grounded:
                     if (!IsGrounded && !isJumping)
-                    {
                         jumpState = JumpState.Air;
-                    }
                     break;
                 case JumpState.GroundJump:
                     isJumping = true;
                     Schedule<PlayerGroundJumped>().player = this;
                     jumpState = JumpState.Air;
+                    break;
+                case JumpState.AirJump:
+                    isJumping = true;
+                    Schedule<PlayerAirJumped>().player = this;
+                    jumpState = JumpState.Freefall;
                     break;
                 case JumpState.Air:
                     if (IsGrounded)
@@ -171,12 +214,8 @@ namespace Platformer.Mechanics
                         jumpState = JumpState.Landed;
                     }
                     break;
-                case JumpState.AirJump:
-                    isJumping = true;
-                    Schedule<PlayerAirJumped>().player = this;
-                    jumpState = JumpState.Freefall;
-                    break;
                 case JumpState.Freefall:
+                    canJump = false;
                     if (IsGrounded)
                     {
                         Schedule<PlayerLanded>().player = this;
@@ -184,6 +223,8 @@ namespace Platformer.Mechanics
                     }
                     break;
                 case JumpState.Landed:
+                    canJump = true;
+                    canDash = true;
                     jumpState = JumpState.Grounded;
                     break;
             }
@@ -197,15 +238,71 @@ namespace Platformer.Mechanics
             switch (moveState)
             {
                 case MoveState.None:
-                    if (isMoving)
+                    if (velocity.x != 0)
                     {
                         moveState = MoveState.Move;
                     }
                     break;
                 case MoveState.Move:
-                    if (!isMoving)
+                    if (velocity.x == 0)
                     {
                         moveState = MoveState.None;
+                    }
+                    break;
+            }
+        }
+
+
+        /// <summary>
+        /// Update direction state.
+        /// </summary>
+        float UpdateDirectionState()
+        {
+            if ((spriteRenderer.flipX && velocity.x > 0) || (!spriteRenderer.flipX && velocity.x < 0))
+            {
+                directionState = DirectionState.Backward;
+                return -1;
+            } 
+            else
+            {
+                directionState = DirectionState.Forward;
+                return 1;
+            }
+        }
+
+        /// <summary>
+        /// Update action state.
+        /// </summary>
+        void UpdateActionState()
+        {
+            switch (actionState)
+            {
+                case ActionState.Dash:
+                    if (dashCooler > 0f)
+                    {
+                        if (directionState == DirectionState.Forward)
+                            actionState = ActionState.ForwardDash;
+                        else
+                            actionState = ActionState.BackDash;
+                    }
+                    break;
+                case ActionState.ForwardDash:
+                    isDashing = true;
+                    dashTimer = dashCooldown;
+                    canDash = IsGrounded;
+                    actionState = ActionState.None;
+                    break;
+                case ActionState.BackDash:
+                    isDashing = true;
+                    dashTimer = dashCooldown;
+                    canDash = IsGrounded;
+                    actionState = ActionState.None;
+                    break;
+                case ActionState.Jump:
+                    if (isJumping)
+                    {
+                        actionState = ActionState.None;
+                        canDash = true;
                     }
                     break;
             }
@@ -216,27 +313,49 @@ namespace Platformer.Mechanics
         /// </summary>
         protected override void ComputeVelocity()
         {
-            if (moveState != MoveState.BackDash)
+            
+            // Flip sprite when not jumping
+            if (jumpState == JumpState.Grounded || isJumping)
             {
                 if (move.x > 0.01f)
+                {
                     spriteRenderer.flipX = false;
+                }
                 else if (move.x < -0.01f)
+                {
                     spriteRenderer.flipX = true;
+                }
             }
 
             animator.SetBool("grounded", IsGrounded);
             animator.SetFloat("velocityX", Mathf.Abs(velocity.x) / maxSpeed);
 
-            // Calculate isJumping velocity
+            // Calculate jump velocity
             if (isJumping && IsGrounded)
             {
-                velocity.y = fullJumpSpeed * model.jumpModifier;
+                velocity.y = groundJumpSpeed * model.jumpModifier;
             }
             else if (isJumping)
             {
                 velocity.y = airJumpSpeed * model.jumpModifier;
             }
 
+            // Calculate dash velocity
+            if (isDashing)
+            {
+                if (!IsGrounded)
+                    velocity.y = model.jumpModifier;
+                velocity.x = UpdateDirectionState() * dashSpeed;
+                dashTimer -= Time.deltaTime * 8;
+                maxSpeed = dashSpeed;
+                canMove = false;
+                if (dashTimer <= 0f)
+                {
+                    isDashing = false;
+                    maxSpeed = 6;
+                    canMove = true;
+                }
+            }
             // Calculate movement velocity
             targetVelocity = move * maxSpeed;
         }
@@ -250,14 +369,28 @@ namespace Platformer.Mechanics
             Freefall,
             Landed,
         }
-
         public enum MoveState
         {
             None,
             Move,
-            Stun,
+        }
+
+        public enum ActionState
+        {
+            None,
+            Punch,
+            Kick,
+            Special,
+            Dash,
             ForwardDash,
-            BackDash
+            BackDash,
+            Jump
+        }
+
+        public enum DirectionState
+        {
+            Forward,
+            Backward
         }
     }
 }
