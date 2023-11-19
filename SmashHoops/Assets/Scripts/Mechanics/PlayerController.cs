@@ -32,15 +32,16 @@ namespace Platformer.Mechanics
         public AudioClip ouchAudio;
 
         // constants
-        public float maxSpeed = 6;
-        private float groundJumpSpeed = 12;
-        private float airJumpSpeed = 12;
+        public float maxSpeed = 8;
+        private float groundJumpSpeed = 14;
+        private float airJumpSpeed = 14;
         private float dashSpeed = 18;
 
         private float dashCooldown = 0.5f;
 
         // flags
         public bool controlEnabled = true;
+        public bool dashEnabled = false;
 
         public bool canMove = true;
         public bool canAction = true;
@@ -170,7 +171,7 @@ namespace Platformer.Mechanics
                 actionState = ActionState.Kick;
             else if (action.Action == InputAction.ActionItem.Special && canAttack)
                 actionState = ActionState.Special;
-            else if (action.Action == InputAction.ActionItem.Dash && canDash)
+            else if (action.Action == InputAction.ActionItem.Dash && dashEnabled && canDash)
                 actionState = ActionState.Dash;
             else if (action.Action == InputAction.ActionItem.Jump && canJump)
                 actionState = ActionState.Jump;
@@ -357,12 +358,12 @@ namespace Platformer.Mechanics
                     canMove = true;
                 }
             }
+
             // Calculate movement velocity
             targetVelocity = move * maxSpeed;
         }
 
-        public enum JumpState
-        {
+        public enum JumpState {
             Grounded,
             GroundJump,
             Air,
@@ -371,14 +372,12 @@ namespace Platformer.Mechanics
             Landed,
         }
 
-        public enum MoveState
-        {
+        public enum MoveState {
             None,
-            Move,
+            Move
         }
 
-        public enum ActionState
-        {
+        public enum ActionState{
             None,
             Punch,
             Kick,
@@ -389,8 +388,7 @@ namespace Platformer.Mechanics
             Jump
         }
 
-        public enum DirectionState
-        {
+        public enum DirectionState{
             Forward,
             Backward
         }
